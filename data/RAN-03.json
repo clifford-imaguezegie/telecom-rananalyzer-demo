@@ -1,0 +1,436 @@
+{
+  "case_id": "RAN-03",
+  "timeline": [
+    {
+      "name": "SP03",
+      "agent": "SP03",
+      "start": "2026-10-19 14:20:23.434235+00:00",
+      "end": "2026-10-19 14:20:37.059397+00:00",
+      "status": "success",
+      "type": "chain"
+    },
+    {
+      "name": "OpenRouter LLM Invocation",
+      "agent": "SP03",
+      "start": "2026-10-19 14:20:23.467231+00:00",
+      "end": "2026-10-19 14:20:37.016589+00:00",
+      "status": "success",
+      "type": "llm"
+    },
+    {
+      "name": "M05_06F v1.9 UDP Semantic Validation",
+      "agent": "SP03",
+      "start": "2026-10-19 14:20:37.017507+00:00",
+      "end": "2026-10-19 14:20:37.024342+00:00",
+      "status": "success",
+      "type": "chain"
+    },
+    {
+      "name": "SP04",
+      "agent": "SP04",
+      "start": "2026-10-19 14:20:37.060470+00:00",
+      "end": "2026-10-19 14:20:51.937643+00:00",
+      "status": "success",
+      "type": "chain"
+    },
+    {
+      "name": "OpenRouter LLM Invocation",
+      "agent": "SP04",
+      "start": "2026-10-19 14:20:37.103746+00:00",
+      "end": "2026-10-19 14:20:51.895764+00:00",
+      "status": "success",
+      "type": "llm"
+    },
+    {
+      "name": "M05_06F v1.9 UDP Semantic Validation",
+      "agent": "SP04",
+      "start": "2026-10-19 14:20:51.896744+00:00",
+      "end": "2026-10-19 14:20:51.906537+00:00",
+      "status": "success",
+      "type": "chain"
+    },
+    {
+      "name": "SUPERVISOR",
+      "agent": "SUPERVISOR",
+      "start": "2026-10-19 14:20:51.938533+00:00",
+      "end": "2026-10-19 14:21:06.479528+00:00",
+      "status": "success",
+      "type": "chain"
+    },
+    {
+      "name": "OpenRouter LLM Invocation",
+      "agent": "SUPERVISOR",
+      "start": "2026-10-19 14:20:52.048379+00:00",
+      "end": "2026-10-19 14:21:06.435853+00:00",
+      "status": "success",
+      "type": "llm"
+    },
+    {
+      "name": "M05_06F Supervisor Grounding Validation",
+      "agent": "SUPERVISOR",
+      "start": "2026-10-19 14:21:06.436792+00:00",
+      "end": "2026-10-19 14:21:06.437324+00:00",
+      "status": "success",
+      "type": "chain"
+    }
+  ],
+  "SUPERVISOR": {
+    "output": {
+      "candidate_hypotheses": [],
+      "case_id": "RAN-03",
+      "corrective_action_verified": false,
+      "final_assessment": "The investigation run exhibited significant service impairment, characterized by an initial period of lossy reception followed by a complete cessation of throughput for the final seven seconds of the test. While protocol evidence shows successful RACH and DRB establishment, it also records a degraded radio environment (RSRP -106 and an A2 event). However, due to the lack of verified temporal alignment and UE-to-flow mapping, it cannot be determined if these radio conditions caused the service failure. The comparison run demonstrated near-nominal performance, but as an independent execution, it does not constitute evidence of recovery or remediation.",
+      "missing_discriminating_evidence": [
+        "Time-aligned per-UE radio measurements and protocol counters (MAC/HARQ/RLC/PDCP) covering the specific iPerf test duration.",
+        "Verified UE-to-flow mapping to correlate protocol events with the observed throughput drop.",
+        "Full unsampled logs to determine if the A2 event or other protocol faults coincide with the transition to zero-reception intervals."
+      ],
+      "recovery_verified": false,
+      "role": "SUPERVISOR_ADAPTED",
+      "root_cause_verified": false,
+      "service_observations": [
+        {
+          "claim": "Investigation run reported a receiver throughput of 2.437 Mbps with 62.515% packet-weighted loss, while the sender transmitted 30.006 Mbps.",
+          "source_refs": [
+            "investigation.iperf_json"
+          ]
+        },
+        {
+          "claim": "Investigation receiver intervals show data reception for the first three intervals (throughput > 0), followed by seven consecutive intervals of zero bytes, zero packets, and zero throughput from 3.000465 s to 10.000548 s.",
+          "source_refs": [
+            "investigation.interval_csv"
+          ]
+        },
+        {
+          "claim": "Comparison run reported a receiver throughput of 29.900 Mbps with 0.3450% packet-weighted loss, with all 10 intervals showing nonzero bytes and throughput.",
+          "source_refs": [
+            "comparison.iperf_json",
+            "comparison.interval_csv"
+          ]
+        }
+      ],
+      "supported_protocol_observations": [
+        {
+          "claim": "Investigation log records successful CBRA Msg4 acknowledgement for UE d4a7.",
+          "source_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "claim": "Investigation log records receipt of Security Mode Complete for UE ID 1 and the addition of DRB 1 to UE 54439.",
+          "source_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "claim": "Investigation log reports an average RSRP of -106 for UE d4a7 and the occurrence of an A2 event (serving quality worse than threshold).",
+          "source_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "claim": "A ULSCH HARQ PID warning was recorded during random access in the investigation log, noted as ignorable for RA.",
+          "source_refs": [
+            "investigation.gnb_log"
+          ]
+        }
+      ],
+      "uncertainty": [
+        "Temporal alignment between gNB log events and iPerf interval timestamps is not verified.",
+        "UE-to-iPerf flow mapping is not established; it is unverified if the UE reporting the A2 event or RSRP -106 is the same UE associated with the iPerf traffic.",
+        "The cause of the total cessation of traffic after the third interval in the investigation run is unknown."
+      ]
+    },
+    "duration_seconds": 14.39,
+    "validation_status": "PASS",
+    "issues": [],
+    "warnings": [],
+    "model": "google/gemma-4-31b-it"
+  },
+  "SP04": {
+    "output": {
+      "agent_name": "SP04",
+      "case_id": "RAN-03",
+      "domain_analysis": {
+        "evidence_family": "Selected gNB log examples and short UDP iPerf summaries",
+        "status": "PARTIAL"
+      },
+      "hypotheses": [],
+      "limitations": [
+        "Selected log examples are sampled; template or example counts are not full-log event counts or unique-UE counts.",
+        "Log-to-measurement temporal alignment and UE-to-flow mapping are unverified; comparison execution is independent and cannot establish treatment or recovery.",
+        "No selected investigation PDCP event was available; comparison PDCP evidence cannot substitute for it.",
+        "The observed radio-quality measurements and protocol events do not establish why the investigation iPerf result was poor."
+      ],
+      "missing_evidence": [
+        "Time-aligned per-UE radio measurements and protocol counters covering the iPerf test, with a verified UE-to-flow mapping.",
+        "Full unsampled logs and interval-level radio/MAC/HARQ/RLC/PDCP counters to distinguish radio, protocol, transport, and test-endpoint alternatives."
+      ],
+      "observations": [
+        {
+          "certainty": "OBSERVED",
+          "claim": "[RACH] Investigation log records successful CBRA Msg4 acknowledgement for UE d4a7: investigation.gnb_log T00211 line 328.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[HARQ_MAC] A ULSCH HARQ PID warning appears during random access and explicitly says to ignore it for RA; it does not by itself establish a HARQ fault: investigation.gnb_log T00176 line 231.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[RLC] Investigation log records DRB 1 added to UE 54439: investigation.gnb_log T00235 line 360.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[PDCP] Comparison log records DRB 1 added to UE ID 2: comparison.gnb_log T00238 line 364. This is comparison-run evidence, not evidence about the investigation UE.",
+          "evidence_refs": [
+            "comparison.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[RRC] Investigation log records receipt of Security Mode Complete for UE ID 1: investigation.gnb_log T00190 line 245.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[RADIO_QUALITY] Investigation log reports average RSRP -106 for UE d4a7 across 13 measurements: investigation.gnb_log T00247 line 374. This selected metric alone does not establish the cause of service performance.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "[RADIO_QUALITY] Investigation log records an A2 event, described as serving quality becoming worse than threshold: investigation.gnb_log T00246 line 371. No aligned measurement establishes its relation to the iPerf interval.",
+          "evidence_refs": [
+            "investigation.gnb_log"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Investigation iPerf summary reports about 2.44 Mbps received and 62.5% loss over about 10 seconds, versus about 29.9 Mbps received and 0.35% loss in the independent comparison summary. These short UDP summaries are not production 15-minute PM counters and do not prove remediation.",
+          "evidence_refs": [
+            "investigation.iperf_json",
+            "comparison.iperf_json"
+          ]
+        }
+      ],
+      "root_cause_verified": false
+    },
+    "duration_seconds": 14.79,
+    "validation_status": "PASS",
+    "issues": [],
+    "warnings": [],
+    "model": "openai/gpt-6-luna"
+  },
+  "SP03": {
+    "output": {
+      "agent_name": "SP03",
+      "case_id": "RAN-03",
+      "domain_analysis": {
+        "evidence_family": "UDP iPerf sender/receiver summaries and approximately one-second receiver interval records",
+        "status": "ANALYZED"
+      },
+      "hypotheses": [],
+      "limitations": [
+        "The supplied evidence contains iPerf measurements and interval records, not the contents of the referenced gNB logs. Log observations and their alignment with measurement times therefore cannot be assessed.",
+        "The comparison is an independent execution, not evidence of a recovery procedure or of recovery within the investigation execution.",
+        "Receiver packet loss is packet-based; it cannot be converted into missing sender bytes from these records.",
+        "Interval loss percentages and the receiver-summary packet-weighted loss are different reported measures; no arithmetic interval-mean loss is presented as equivalent to the summary loss."
+      ],
+      "missing_evidence": [
+        "gNB log contents and verified time alignment with the iPerf executions.",
+        "Correlated RAN or transport measurements that could support causal attribution."
+      ],
+      "observations": [
+        {
+          "certainty": "OBSERVED",
+          "claim": "Investigation sender summary reports 37,509,738 bytes, 30.006 Mbps, and 5,813 packets over approximately 10 seconds. Receiver summary reports 3,046,242 bytes and 2.437 Mbps, with 3,634 lost packets out of 5,813 packets, for 62.515% receiver packet-weighted loss. The receiver summary's packets field is the loss-rate denominator; it is not a count of successfully received packets.",
+          "evidence_refs": [
+            "investigation.iperf_json"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Investigation CSV has 10 receiver intervals. The first three have nonzero bytes, packets, and throughput; the remaining seven intervals, from start 3.000465 s through end 10.000548 s, each report zero bytes, zero packets, and zero throughput. Thus each zero-reception measure independently counts seven intervals in these records. The reported interval loss percentages for the first three are 60.037%, 64.400%, and 66.133%; the remaining seven report 0.0% alongside zero packets.",
+          "evidence_refs": [
+            "investigation.interval_csv"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Investigation receiver interval bytes are 1,500,054, 1,339,284, and 206,904 in the first three intervals, then zero in the seven remaining intervals. Interval packet fields are 2,685, 2,691, and 437, then zero. Reported jitter is 0.4238 ms, 0.2052 ms, and 0.1512 ms in the first three intervals, then remains 0.1512 ms in the zero-reception intervals.",
+          "evidence_refs": [
+            "investigation.interval_csv"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Comparison sender summary reports 37,505,404 bytes and 30.004 Mbps over approximately 10 seconds. Receiver summary reports 37,375,996 bytes and 29.900 Mbps, with 96 lost packets out of 27,823 packets, for 0.3450% receiver packet-weighted loss.",
+          "evidence_refs": [
+            "comparison.iperf_json"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Comparison CSV has 10 intervals, all with nonzero bytes, packet fields, and throughput. Interval throughput ranges from approximately 29.438 to 30.036 Mbps; bytes range from 3,680,040 to 3,755,528. Reported interval lost-packet counts range from 0 to 52, and interval loss percentages range from 0% to 1.869%. Jitter ranges from 0.0082 ms to 0.2383 ms.",
+          "evidence_refs": [
+            "comparison.interval_csv"
+          ]
+        },
+        {
+          "certainty": "OBSERVED",
+          "claim": "Investigation and comparison are distinct executions with markedly different receiver throughput, receiver bytes, and receiver packet-loss summaries. Sender bytes are separately reported for each execution; the receiver packet-loss figures do not quantify missing sender bytes.",
+          "evidence_refs": [
+            "investigation.iperf_json",
+            "comparison.iperf_json"
+          ]
+        }
+      ],
+      "root_cause_verified": false
+    },
+    "duration_seconds": 13.55,
+    "validation_status": "PASS",
+    "issues": [],
+    "warnings": [],
+    "model": "openai/gpt-6-luna"
+  },
+  "run_id": "20261019T142023430758Z_1f6ee9b7",
+  "operational_trace_id": "f40fc59c-56ca-47fd-8c01-1e36af927e48",
+  "stages": [
+    "SP03",
+    "SP04",
+    "SUPERVISOR"
+  ],
+  "judge": {
+    "score": 40,
+    "max_score": 40,
+    "criteria": 10,
+    "assessment": "The agents performed with exceptional discipline. SP03 provided high-fidelity measurement analysis. SP04 correctly mapped protocol events to templates and lines while maintaining a strict distinction between the investigation and comparison logs. The Supervisor synthesized these findings into a coherent assessment that prioritized diagnostic uncertainty over unsupported RCA, correctly identifying the lack of temporal alignment as the primary barrier to a causal conclusion.",
+    "role_reviews": {
+      "SP03": {
+        "criteria": {
+          "evidence_discipline": {
+            "rationale": "Maintains strict boundaries; correctly notes that comparison is an independent execution and that receiver packet loss cannot be converted to missing sender bytes from the provided records.",
+            "score": 4,
+            "source_refs": [
+              "investigation.iperf_json",
+              "comparison.iperf_json"
+            ]
+          },
+          "measurement_fidelity": {
+            "rationale": "SP03 accurately reports all summary metrics (bytes, Mbps, packets, loss %) and interval-specific data (nonzero vs zero intervals, specific byte/packet counts, and jitter) for both investigation and comparison runs.",
+            "score": 4,
+            "source_refs": [
+              "investigation.iperf_json",
+              "investigation.interval_csv",
+              "comparison.iperf_json",
+              "comparison.interval_csv"
+            ]
+          },
+          "measurement_interpretation": {
+            "rationale": "Correctly identifies that the receiver summary's packets field is the denominator for loss, distinguishes between packet-weighted loss and interval-mean loss, and correctly identifies the 7-interval zero-reception window.",
+            "score": 4,
+            "source_refs": [
+              "investigation.iperf_json",
+              "investigation.interval_csv"
+            ]
+          }
+        },
+        "material_gaps": [],
+        "strengths": [
+          "High precision in numeric reporting",
+          "Correct interpretation of iPerf JSON/CSV semantics"
+        ]
+      },
+      "SP04": {
+        "criteria": {
+          "domain_coverage": {
+            "rationale": "Covers RACH, MAC/HARQ, RLC, RRC, and Radio Quality (RSRP/A2) based on the provided selected templates.",
+            "score": 4,
+            "source_refs": [
+              "investigation.gnb_log"
+            ]
+          },
+          "evidence_discipline": {
+            "rationale": "Every claim is backed by a (role, template, line) triple. Correctly identifies the provenance of the PDCP claim as the comparison run.",
+            "score": 4,
+            "source_refs": [
+              "investigation.gnb_log",
+              "comparison.gnb_log"
+            ]
+          },
+          "hypothesis_quality": {
+            "rationale": "Correctly abstains from inventing a root cause, noting that the available evidence (RSRP/A2) is insufficient to prove causality without temporal alignment.",
+            "score": 4,
+            "source_refs": [
+              "investigation.gnb_log"
+            ]
+          },
+          "protocol_interpretation": {
+            "rationale": "Accurately interprets RACH success, the ignorable nature of the HARQ PID warning during RA, and the meaning of the A2 event. Correctly identifies that the PDCP evidence cited is from the comparison run, not the investigation run.",
+            "score": 4,
+            "source_refs": [
+              "investigation.gnb_log",
+              "comparison.gnb_log"
+            ]
+          }
+        },
+        "material_gaps": [],
+        "strengths": [
+          "Rigorous provenance tracking",
+          "Correct discrimination between investigation and comparison log evidence"
+        ]
+      },
+      "SUPERVISOR": {
+        "criteria": {
+          "causal_uncertainty": {
+            "rationale": "Appropriately treats the comparison run as a separate execution rather than a recovery, and maintains uncertainty regarding the root cause of the traffic cessation.",
+            "score": 4,
+            "source_refs": [
+              "comparison.iperf_json"
+            ]
+          },
+          "hypothesis_discrimination": {
+            "rationale": "Correctly identifies the A2 event and RSRP as candidate indicators but explicitly refuses to claim causality due to lack of temporal alignment and UE-to-flow mapping.",
+            "score": 4,
+            "source_refs": [
+              "investigation.gnb_log"
+            ]
+          },
+          "synthesis_fidelity": {
+            "rationale": "Faithfully synthesizes the throughput collapse (first 3 intervals vs last 7) and the corresponding protocol/radio observations from the specialists.",
+            "score": 4,
+            "source_refs": [
+              "investigation.iperf_json",
+              "investigation.interval_csv",
+              "investigation.gnb_log"
+            ]
+          }
+        },
+        "material_gaps": [],
+        "strengths": [
+          "Excellent handling of uncertainty",
+          "Accurate synthesis of the 'traffic cliff' observed in the interval CSV"
+        ]
+      }
+    },
+    "causal_verification": {
+      "rca_accuracy_scorable": false,
+      "reason": "No independently verified RCA label is established for this testbed case in the frozen evaluation contract.",
+      "verified_causal_label_available": false
+    },
+    "trace_id": "01a15489-9b02-7072-995b-d9fbd594c9cd",
+    "duration_seconds": 38.18
+  }
+}
