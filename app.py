@@ -1,4 +1,4 @@
-"""RANalyzer v0.9 — operational-value-led clarity-first offline demonstration built from frozen v2.3.10 replay fixtures.
+"""RANalyzer v1.0 — operational-value-led clarity-first offline demonstration built from frozen v2.3.10 replay fixtures.
 Presentation only. No external inference, network action, or LangSmith API access.
 """
 import json
@@ -161,10 +161,27 @@ def step_scene(delta):
     # Called before the scene slider is instantiated on the next Streamlit rerun.
     st.session_state.scene=max(0,min(6,int(st.session_state.scene)+delta))
 
+def stop_replays():
+ for k in CASES:
+  st.session_state['ra_replay_'+k+'_playing']=False
+
 def navigate(to,case=None):
+ # Streamlit button callback: executes before the page radio is instantiated.
+ previous=st.session_state.get('case','RAN-01')
  st.session_state.page=to
- if case and case!=st.session_state.case:st.session_state.case=case;st.session_state.scene=0
- st.rerun()
+ if case is not None:st.session_state.case=case
+ if to=='Case Stories' or (case is not None and case!=previous):st.session_state.scene=0
+ if to=='Agent Flow':
+  selected=case or st.session_state.case
+  st.session_state['ra_replay_'+selected+'_step']=0
+ stop_replays()
+
+def changed_case():
+ st.session_state.scene=0
+ for case_id in CASES:
+  st.session_state['ra_replay_'+case_id+'_step']=0
+ stop_replays()
+
 def html(x):return escape(str(x),quote=True)
 def section(tag,title,desc=''):
  st.markdown(f'<div class="ra-kicker">{html(tag)}</div>',unsafe_allow_html=True)
@@ -173,18 +190,50 @@ def section(tag,title,desc=''):
 def case_metrics(c,d):
  cols=st.columns(4)
  for col,title,val in zip(cols,['Investigation RX','Independent comparison RX','Receiver packet loss','Semantic Judge'],[f'{c["rx"]:.3f} Mbps',f'{c["comparison"]:.3f} Mbps',f'{c["loss"]:.3f}%',f'{d["judge"]["score"]}/{d["judge"]["max_score"]}']):col.metric(title,val)
-def source_obs(items,limit=8):
- for o in items[:limit]:
+def source_obs(items,limit=None):
+ subset=items if limit is None else items[:limit]
+ for o in subset:
   if isinstance(o,dict):
    st.markdown('• '+o.get('claim',''))
-   if o.get('source_refs'):st.caption('Sources: '+', '.join(o['source_refs']))
+   refs=o.get('evidence_refs') or o.get('source_refs') or []
+   if isinstance(refs,str):refs=[refs]
+   if refs:st.caption('Recorded source family: '+', '.join(map(str,refs)))
   else:st.markdown('• '+str(o))
+ if limit is not None and len(items)>limit:
+  with st.expander(f'Inspect all {len(items)} recorded observations'):
+   source_obs(items)
+
+def measurement_visual(cid,c,d):
+ if cid=='RAN-02':
+  x,y,z=st.columns(3)
+  x.metric('Investigation TX (sender)',f'{c["sender"]:.3f} Mbps')
+  y.metric('Investigation RX (receiver)',f'{c["rx"]:.3f} Mbps')
+  z.metric('Receiver-reported UDP loss',f'{c["loss"]:.5f}%')
+  fig=go.Figure()
+  fig.add_bar(x=['Sender TX','Receiver RX'],y=[c['sender'],c['rx']],marker_color=['#4270c8','#168d86'])
+  fig.update_layout(height=290,yaxis_title='Mbps',margin=dict(l=10,r=10,t=12,b=12),showlegend=False)
+  st.plotly_chart(fig,use_container_width=True)
+  st.caption('TX and RX are reported measurements from the investigation. Do not infer that their rate gap equals receiver-reported packet loss. Independent comparison is a separate execution.')
+ elif cid=='RAN-03':
+  st.markdown('**Recorded receiver interval pattern · 10 intervals**')
+  bars=st.columns(10,gap='small')
+  for i,col in enumerate(bars):
+   with col:
+    st.markdown(('🟦' if i<3 else '⬜'))
+    st.caption(str(i+1))
+  st.caption('Three intervals with nonzero reception followed by seven with zero reception. This is a presence/absence pattern, not a reconstructed throughput series. Radio event timestamps are not proven aligned.')
+  case_metrics(c,d)
+ else:
+  case_metrics(c,d)
+  st.info('Four receiver intervals with no reported reception; summary receiver packet-weighted loss is approximately 98.43%.')
+
 def comparison_chart(c):
  fig=go.Figure()
  fig.add_bar(name='Investigation',x=['Measured receiver throughput'],y=[c['rx']],marker_color='#168d86')
  fig.add_bar(name='Independent comparison',x=['Measured receiver throughput'],y=[c['comparison']],marker_color='#4270c8')
  fig.update_layout(barmode='group',height=305,yaxis_title='Mbps',margin=dict(l=10,r=10,b=10,t=10),legend=dict(orientation='h',y=1.15))
  st.plotly_chart(fig,use_container_width=True)
+ st.caption('Independent comparison: separate execution, not verified remediation or recovery.')
 
 def card(title,text):st.markdown(f'<div class="ra-card"><b>{html(title)}</b><p>{html(text)}</p></div>',unsafe_allow_html=True)
 
@@ -194,7 +243,7 @@ st.markdown('<div class="ra-brand"><b>📡 RANalyzer <span> / AI-POWERED RAN SER
 nav=st.radio('Navigate the experience',PAGES,key='page',horizontal=True,label_visibility='collapsed')
 with st.sidebar:
  st.subheader('RANalyzer · Case selector')
- st.selectbox('Recorded RAN case',list(CASES),key='case',format_func=lambda x:x+' · '+CASES[x]['title'])
+ st.selectbox('Recorded RAN case',list(CASES),key='case',on_change=changed_case,format_func=lambda x:x+' · '+CASES[x]['title'])
  st.caption('v2.3.10 · frozen non-RAG evidence')
  st.caption('Semantic Judge: 40/40 on each 2026-10-19 rerun')
  st.divider()
@@ -226,8 +275,8 @@ if page=='The Challenge':
     st.write(t['problem'])
     st.caption('**Why watch:** '+t['promise'])
    with r:
-    if st.button('Watch guided story →',key='story_'+k,use_container_width=True):navigate('Case Stories',k)
-    if st.button('Inspect agent flow →',key='agent_'+k,use_container_width=True):navigate('Agent Flow',k)
+    st.button('Watch guided story →',key='story_'+k,use_container_width=True,on_click=navigate,args=('Case Stories',k))
+    st.button('Inspect agent flow →',key='agent_'+k,use_container_width=True,on_click=navigate,args=('Agent Flow',k))
  st.markdown('**The common engineering output:** documented service impairment → qualified hypotheses → missing evidence → recommended next investigation. The operational time or cost benefit remains a pilot hypothesis.')
  section('04 · What the buyer actually gets','An engineering investigation brief, not a black-box score','For each case the product packages measured service symptoms, supported protocol observations, qualified hypotheses and specific missing evidence into a reviewable assessment.')
  buyer_bridge(cid)
@@ -237,11 +286,11 @@ if page=='The Challenge':
 
 elif page=='Service Experience':
  section('01 · Measured service','What does the network service evidence show?','Explore recorded sender/receiver performance from the selected synthetic RAN case. Comparison measurements came from a separate execution.')
- proposition(cid);st.subheader(f'{cid} · {c["title"]}');case_metrics(c,d);comparison_chart(c)
+ proposition(cid);st.subheader(f'{cid} · {c["title"]}');measurement_visual(cid,c,d);comparison_chart(c)
  st.info(c['hook'])
  with st.expander('SP03 · detailed measurement interpretation',expanded=True):source_obs(d['SP03']['output'].get('observations',[]),8)
  st.caption('Do not interpret sender–receiver throughput disparity as receiver-reported packet loss. Interval arithmetic loss and packet-weighted summary loss are different metrics.')
- if st.button('Continue to case story →'):navigate('Case Stories')
+ st.button('Continue to case story →',on_click=navigate,args=('Case Stories',))
  boundary()
 
 elif page=='Architecture':
@@ -256,7 +305,7 @@ elif page=='Architecture':
 elif page=='Case Stories':
  section('Guided engineering story',f'{cid} · {c["title"]}','Follow the actual recorded engineering outputs through a clear, progressive story. Each scene is a presentation of completed evidence, not simulated inference.')
  proposition(cid)
- stages=['Ready','Observe service','Measurement specialist','Protocol specialist','Supervisor synthesis','Independent evaluation','Decision boundary']
+ stages=['Ready','Observe service','Measurement specialist','Protocol specialist','Supervisor synthesis','Engineering brief','Next investigation']
  navcols=st.columns([1,3,1])
  with navcols[0]:
   st.button('← Previous',disabled=st.session_state.scene==0,on_click=step_scene,args=(-1,),key='story_previous')
@@ -268,32 +317,37 @@ elif page=='Case Stories':
  with st.container(border=True):
   st.caption(f'SCENE {scene} OF {len(stages)-1} · {stages[scene].upper()}')
   if scene==0:st.subheader('The reason to watch');st.write(STORY[cid]['problem']);st.info('What to watch for: '+STORY[cid]['promise'])
-  elif scene==1:st.subheader('What the measurements show');case_metrics(c,d);st.write(c['lesson'])
-  elif scene==2:st.subheader('SP03 · Measurement analysis');source_obs(d['SP03']['output'].get('observations',[]),6)
-  elif scene==3:st.subheader('SP04 · Radio and protocol interpretation');source_obs(d['SP04']['output'].get('observations',[]),6)
+  elif scene==1:st.subheader('What the measurements show');measurement_visual(cid,c,d);st.write(c['lesson'])
+  elif scene==2:
+   st.subheader('SP03 · What do the measurements establish?');st.info(SCENE_VALUE[cid][scene]);source_obs(d['SP03']['output'].get('observations',[]),3)
+  elif scene==3:
+   st.subheader('SP04 · What do the sampled logs add?');st.info(SCENE_VALUE[cid][scene]);source_obs(d['SP04']['output'].get('observations',[]),3)
   elif scene==4:
    st.subheader('Supervisor · Evidence synthesis');st.write(sup.get('final_assessment',''))
    for h in sup.get('candidate_hypotheses',[]):st.markdown('• **'+h.get('status','POSSIBLE')+'** — '+h.get('claim',''))
    if not sup.get('candidate_hypotheses'):st.info('No sufficiently supported causal hypothesis was asserted in this recorded case.')
-  elif scene==5:st.subheader('Independent semantic evaluation');st.success(f'{judge["score"]}/{judge["max_score"]} · existing ten-criterion rubric');st.write(judge.get('assessment',''))
+  elif scene==5:st.subheader('Engineering assessment delivered');deliverable(cid,sup)
   else:
-   st.subheader('Engineering outcome and next action');deliverable(cid,sup);st.warning('A verified causal root cause, verified recovery and site acceptance are outside this experiment.')
- customer_takeaway(cid,scene)
+   st.subheader('Next investigation · Engineering action plan');st.write(STORY[cid]['next']);st.markdown('**Why this matters:** '+STORY[cid]['value']);st.caption('Verified cause and recovery remain outside this experiment.')
+ if scene not in (2,3):customer_takeaway(cid,scene)
+ if scene>=5:
+  with st.expander('Independent semantic assurance · outside the operational workflow'):
+   st.write(f"Recorded semantic assessment: {judge['score']}/{judge['max_score']}")
+   st.write(judge.get('assessment',''))
+   st.caption('Semantic Judge assessment does not establish causal RCA correctness.')
  if scene==6:
   st.success('Delivered: a qualified, source-linked engineering assessment and a focused next-evidence plan — not a verified root cause.')
   st.markdown('**Next: verify the mechanism.** The Agent Flow shows which specialist contributed each type of evidence and how the Supervisor synthesised it.')
  st.caption('Scene progression follows engineering presentation order. The raw LangSmith timeline remains inspectable separately in Agent Flow.')
  st.markdown('**Why inspect the Agent Flow?** See *how* SP03, SP04 and the Supervisor produced and qualified this assessment, with original trace events, independent evaluation and recorded timing.')
- if st.button('See how the AI reached this assessment →',key='story_to_agent'):navigate('Agent Flow')
+ st.button('See how the AI reached this assessment →',key='story_to_agent',on_click=navigate,args=('Agent Flow',))
 
 elif page=='Agent Flow':
  section('Interactive trace-grounded replay',f'{cid} · Follow the agent execution','Play the recorded SP03 → SP04 → Supervisor sequence. Events and timings come from the saved LangSmith trace; animation timing is for presentation only.')
  st.markdown('**Why watch this workflow?** Inspect the engineering process behind the deliverable: SP03 interprets service measurements, SP04 evaluates sampled radio/protocol observations, and the Supervisor reconciles them. Validation and the independent Judge make the work auditable; they do not establish causal ground truth.')
- buyer_bridge(cid)
  st.info(STORY[cid]['question']+'  '+STORY[cid]['promise'])
  render_agent_replay(d,cid)
- deliverable(cid,sup,compact=True)
- if st.button('Inspect supporting evidence →',key='agent_to_evidence'):navigate('Evidence Room')
+ st.button('Inspect supporting evidence →',key='agent_to_evidence',on_click=navigate,args=('Evidence Room',))
  boundary()
 
 elif page=='Evidence Room':
@@ -322,6 +376,18 @@ elif page=='Results & Value':
  st.markdown('<div class="ra-journey"><span>01 · Closed engineering experiment</span><span>→ 02 · Operator benchmark pilot</span><span>→ 03 · Governed integration</span></div>',unsafe_allow_html=True)
  st.markdown('**Pilot measures:** time to engineer-reviewed finding; manual effort per investigation; evidence completeness and unsupported claims; acceptance rework. No measured savings, formal operator acceptance or production SLAs have yet been established.')
  st.markdown('**Independent assurance caveat:** the Judge uses the same model family as the Supervisor, and B3 is evaluator-only rather than a verified causal RCA label.')
- brief={'case':cid,'metrics':c,'supervisor_assessment':sup.get('final_assessment'), 'missing_evidence':sup.get('missing_discriminating_evidence',[]),'semantic_judge':{'score':judge['score'],'max_score':judge['max_score']},'root_cause_verified':False,'recovery_verified':False,'evidence_scope':'Synthetic offline replay, not an operator acceptance decision'}
+ brief={'case':cid,'metrics':c,'engineering_question':STORY[cid]['question'],
+ 'operational_trace_id':d.get('operational_trace_id'),'run_id':d.get('run_id'),'judge_trace_id':judge.get('trace_id'),
+ 'measurement_observations':d['SP03']['output'].get('observations',[]),
+ 'protocol_observations':d['SP04']['output'].get('observations',[]),
+ 'supervisor_assessment':sup.get('final_assessment'),
+ 'supported_protocol_observations':sup.get('supported_protocol_observations',[]),
+ 'candidate_hypotheses':sup.get('candidate_hypotheses',[]),
+ 'uncertainty':sup.get('uncertainty',[]),
+ 'missing_evidence':sup.get('missing_discriminating_evidence',[]),
+ 'recommended_next_investigation':STORY[cid]['next'],
+ 'semantic_judge':{'score':judge['score'],'max_score':judge['max_score']},
+ 'root_cause_verified':False,'corrective_action_verified':False,'recovery_verified':False,
+ 'evidence_scope':'Synthetic offline replay, not verified causal RCA or an operator acceptance decision'}
  st.download_button('Download selected case evidence brief (JSON)',json.dumps(brief,indent=2),file_name=f'RANalyzer_{cid}_evidence_brief.json',mime='application/json')
  boundary()

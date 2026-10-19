@@ -4,7 +4,7 @@
 
 RANalyzer is an experimental, multi-agent 5G Radio Access Network (RAN) investigation solution. It brings together endpoint performance measurements, sampled gNB protocol logs, specialist AI analysis and Supervisor synthesis to help telecom engineers understand **what is happening, which explanations are plausible, what remains unverified, and what to investigate next**.
 
-This repository hosts the **customer-facing Streamlit demonstration (v0.9)**. It replays three completed synthetic-network investigations from the frozen **M05_06F v2.3.10 non-RAG** engineering baseline. It does **not** run live models, connect to operational networks or implement autonomous remediation.
+This repository hosts the **customer-facing Streamlit demonstration (v1.0)**. It replays three completed synthetic-network investigations from the frozen **M05_06F v2.3.10 non-RAG** engineering baseline. It does **not** run live models, connect to operational networks or implement autonomous remediation.
 
 > **Primary proposition:** When a network service underperforms, RANalyzer turns fragmented measurements and radio/protocol observations into a structured engineering investigation brief, with supporting evidence and explicit uncertainty.
 
@@ -139,10 +139,15 @@ README.md                 # Product, implementation and demonstration guide
 
 ## Project maturity and next steps
 
-**Current status:** Functional experimental replay demonstration, **v0.9**. The underlying **M05_06F engineering phase is closed** and its frozen non-RAG evidence remains the reference. Browser-based customer comprehension, interaction, layout and accessibility acceptance have **not yet been independently completed** for this presentation candidate.
+**Current status:** Functional experimental replay demonstration, **v1.0**. The underlying **M05_06F engineering phase is closed** and its frozen non-RAG evidence remains the reference. Browser-based customer comprehension, interaction, layout and accessibility acceptance have **not yet been independently completed** for this presentation candidate.
 
 Next steps are to (1) independently review the Case Stories and Agent Flow with telecom stakeholders; (2) refine the UX from observed findings; and (3) define an operator pilot with approved data access, meaningful workflow baselines, security controls and engineer-reviewed outcomes before making operational performance claims.
 
 The demo is maintained **separately from the private `ranalyzer-engineering` evidence repository**. This repository distributes only curated replay records, not the private raw LangSmith exports, frozen evaluator-only B3 reference, private full logs or restricted knowledge sources.
 
 Additional detail: [`docs/DEMO_SCOPE.md`](docs/DEMO_SCOPE.md), [`docs/TECHNOLOGY_AND_ARCHITECTURE.md`](docs/TECHNOLOGY_AND_ARCHITECTURE.md), [`docs/TRACE_PROVENANCE.md`](docs/TRACE_PROVENANCE.md), and [`docs/OPERATIONAL_VALUE_AND_PILOT.md`](docs/OPERATIONAL_VALUE_AND_PILOT.md).
+
+
+## v1.0 customer experience refinement
+
+Guided Stories now prioritise measured symptoms, qualified interpretation, the engineering brief and next investigation. Agent Flow has a three-stage narrative with recorded nested traces available separately; replay is offline. See `docs/V1_0_ACCEPTANCE.md` for detailed regression and evidence checks.
